@@ -3,6 +3,8 @@ require 'omniauth-oauth2'
 module OmniAuth
   module Strategies
     class Feishu < OmniAuth::Strategies::OAuth2
+      class NoAppAccessTokenError < StandardError; end
+
       attr_reader :app_access_token
 
       option :name, 'feishu'
@@ -15,16 +17,6 @@ module OmniAuth
         user_info_url: "https://open.feishu.cn/open-apis/authen/v1/user_info"
       }
 
-      option :access_token_options, {
-        app_access_token: get_app_access_token,
-        grant_type: 'authorization_code'
-      }
-
-      def build_access_token
-        options.access_token_options.merge!(headers: { 'Content-Type' => 'application/json' })
-        super
-      end
-
       info do
         {
           name: raw_info['name'],
@@ -35,11 +27,29 @@ module OmniAuth
 
       def raw_info
         @raw_info ||= begin
-          client.request(:get, options.client_options.user_info_url, :params => {
-              :format => :json,
-              :anthorization => access_token.token,
-            }, :parse => :json).parsed
+          response = Faraday.get(
+            options.client_options.user_info_url,
+            nil,
+            content_type: 'application/json', authorization: "Bearer #{access_token.token}"
+          )
+          response_body = JSON.parse(response.body)
+          response_body['data']
         end
+      end
+
+      def build_access_token
+        resp = Faraday.post(
+          options.client_options.token_url,
+          { code: request.params["code"], app_access_token: app_access_token, grant_type: "authorization_code" }.to_json,
+          content_type: "application/json"
+        )
+        data = JSON.parse(resp.body)['data']
+        ::OAuth2::AccessToken.from_hash(client, data)
+      end
+
+      def callback_phase
+        get_app_access_token
+        super
       end
 
       private
@@ -47,10 +57,15 @@ module OmniAuth
       def get_app_access_token
         resp = Faraday.post(
           options.client_options.app_access_token_url,
-          {app_id: options.client_id, app_secret: options.client_secret}.to_json,
-          content_type: 'application/json'
+          { app_id: options.client_id, app_secret: options.client_secret }.to_json,
+          content_type: "application/json"
         )
-        @app_access_token = JSON.parse(resp.body)['app_access_token']
+        response_body = JSON.parse(resp.body)
+        if response_body.key?('app_access_token')
+          @app_access_token = response_body['app_access_token']
+        else
+          raise NoAppAccessTokenError, "cannot get app_access_token."
+        end
       end
     end
   end
