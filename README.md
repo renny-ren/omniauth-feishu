@@ -72,11 +72,20 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
   end
 
   def failure
+    flash[:alert] = request.env["omniauth.error"]
     redirect_to root_path
   end
 end
 ```
 
+Devise will create the following url methods:
+- user_feishu_omniauth_authorize_path
+- user_feishu_omniauth_callback_path
+
+So you may add a button like this:
+```
+<%= link_to "Sign in with feishu", user_feishu_omniauth_authorize_path, class: "btn" %>
+```
 
 ## Contributing
 
