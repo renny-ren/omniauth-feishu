@@ -1,4 +1,5 @@
 require "omniauth/feishu/version"
+require "omniauth/strategies/feishu"
 
 module Omniauth
   module Feishu

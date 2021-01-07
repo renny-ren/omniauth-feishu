@@ -37,6 +37,12 @@ module OmniAuth
         end
       end
 
+      def authorize_params
+        super.tap do |params|
+          params[:app_id] = options.client_id
+        end
+      end
+
       def build_access_token
         resp = Faraday.post(
           options.client_options.token_url,
