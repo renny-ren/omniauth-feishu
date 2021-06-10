@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    omniauth-feishu (0.1.4)
+    omniauth-feishu (0.1.5)
       omniauth-oauth2 (~> 1.6.0)
 
 GEM
