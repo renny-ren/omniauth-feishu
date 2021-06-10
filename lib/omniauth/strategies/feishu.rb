@@ -26,7 +26,11 @@ module OmniAuth
           avatar_thumb: raw_info['avatar_thumb'],
           avatar_middle: raw_info['avatar_middle'],
           avatar_big: raw_info['avatar_big'],
-          user_id: raw_info['user_id']
+          user_id: raw_info['user_id'], 
+          union_id: raw_info['union_id'], 
+          open_id: raw_info['open_id'], 
+          en_name: raw_info['en_name'], 
+          app_access_token: @app_access_token
         }
       end
 
